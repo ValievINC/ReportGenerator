@@ -1,12 +1,9 @@
-import tkinter.ttk
+# encoding: windows-1251
 
 import pandas as pd
 from openpyxl import load_workbook
-from openpyxl.styles import Alignment, Border, Side, Font
+from openpyxl.styles import Alignment, Border, Side, Font, PatternFill
 from openpyxl.utils import get_column_letter
-import tkinter as tk
-from tkinter import filedialog
-from os import path
 
 
 # Styles
@@ -18,6 +15,8 @@ font1 = Font(name='Verdana', size=6, bold=False, italic=False, color='000000')
 font2 = Font(name='Verdana', size=8, bold=False, italic=False, color='000000')
 font3 = Font(name='Verdana', size=12, bold=True, italic=False, color='000000')
 font4 = Font(name='Verdana', size=7, bold=True, italic=False, color='000000')
+
+red_fill = PatternFill(start_color='FA8072', end_color='A52A2A', fill_type='solid')
 
 border = Border(
     left=Side(border_style='thin', color='000000'),
@@ -55,13 +54,27 @@ def sort_pages(workbook):
 def fill_employees_page(workbook, data, date):
     letter = get_column_letter(date + 3)
 
-    if data['Сотрудник'] not in workbook.sheetnames:
-        create_employee_sheet(workbook, data)
-        sheet = workbook[f'{data["Сотрудник"]}']
-        sheet[f'{letter}4'] = data['Время, часы']
-    else:
-        sheet = workbook[f'{data["Сотрудник"]}']
-        sheet[f'{letter}4'] = data['Время, часы']
+    for i in range(len(data)):
+        if data.iloc[i]['Сотрудник'] not in workbook.sheetnames:
+            create_employee_sheet(workbook, data.iloc[i])
+    
+    today_employees_list = data['Сотрудник'].tolist()
+    
+    for employee in workbook.sheetnames[1:]:
+        if employee.title() not in today_employees_list:
+            sheet = workbook[employee.title()]
+            sheet[f'{letter}4'].fill = red_fill
+        else:
+            sheet = workbook[employee.title()]
+            sheet[f'{letter}4'] = data.loc[data['Сотрудник'] == employee.title()]['Время, часы'].item()
+    # if data['Сотрудник'] not in workbook.sheetnames:
+    #     create_employee_sheet(workbook, data)
+    #     sheet = workbook[f'{data["Сотрудник"]}']
+    #     sheet[f'{letter}4'] = data['Время, часы']
+    # else:
+    #     sheet = workbook[f'{data["Сотрудник"]}']
+    #     sheet[f'{letter}4'] = data['Время, часы']
+
 
 
 def restore_old_data(name, sheet, index, old_data):
@@ -109,6 +122,7 @@ def fill_summary_table(workbook, old_data):
         for i in range(1, 31):
             letter_for_employee = get_column_letter(i+3)
             time = employee_sheet[f'{letter_for_employee}4'].value
+            filled = employee_sheet[f'{letter_for_employee}4'].fill
             if time is not None:
                 if i < 16:
                     sheet[f'{get_column_letter(i+4)}{pos}'] = 'Я'
@@ -116,6 +130,14 @@ def fill_summary_table(workbook, old_data):
                 else:
                     sheet[f'{get_column_letter(i-11)}{pos + 2}'] = 'Я'
                     sheet[f'{get_column_letter(i-11)}{pos + 3}'] = '' if time == 8 else time - 8
+            elif filled is not None:
+                fill = PatternFill(fill_type=filled.fill_type, fgColor=filled.fgColor, bgColor=filled.bgColor)
+                if i < 16:
+                    sheet[f'{get_column_letter(i + 4)}{pos}'].fill = fill
+                    sheet[f'{get_column_letter(i + 4)}{pos + 1}'].fill = fill
+                else:
+                    sheet[f'{get_column_letter(i - 11)}{pos + 2}'].fill = fill
+                    sheet[f'{get_column_letter(i - 11)}{pos + 3}'].fill = fill
 
     max_row = sheet.max_row
     create_summary_sheet_footer(sheet, max_row)
@@ -368,18 +390,19 @@ def create_employee_sheet(workbook, data):
     sheet.merge_cells('D3:AH3')
 
 
-def create_report(excel_file, data):
-    global csv_file
-    print(excel_file, data)
+def ignore_employees():
+    pass
 
+
+def create_report(excel_file, data):
     workbook = load_workbook(excel_file)
 
-    day = int(csv_file[:2])
+    csv_file_name = data.split("/")[-1]
+    day = int(csv_file_name[:2])
     df = count_hours_per_day(data)
     old_data = to_remember(workbook)
 
-    for i in range(len(df)):
-        fill_employees_page(workbook, df.loc[i], day)
+    fill_employees_page(workbook, df, day)
 
     create_summary_sheet_header(workbook)
     re_index(workbook)
@@ -390,61 +413,30 @@ def create_report(excel_file, data):
     print('Готово!')
 
 
-def select_csv():
-    global csv_file
-    global label_csv
-    global csv_file_path
-    csv_file_path = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv")])
-    if csv_file_path:
-        csv_file = csv_file_path.split("/")[-1]
-        label_csv.config(text=csv_file)
-    if csv_file and xlsx_file:
-        run_button.config(state='active')
+def shorten_name(full_name):
+    split_names = full_name.split()
+    shortened_name = split_names[1] + ' ' + split_names[0]
+    return shortened_name
 
 
-def select_xlsx():
-    global xlsx_file
-    global label_xlsx
-    global xlsx_file_path
-    xlsx_file_path = filedialog.askopenfilename(filetypes=[("XLSX files", "*.xlsx")])
-    if xlsx_file_path:
-        xlsx_file = xlsx_file_path.split("/")[-1]
-        label_xlsx.config(text=xlsx_file)
-    if csv_file and xlsx_file:
-        run_button.config(state='active')
+def prebuild(report, staff):
+    workbook = load_workbook(report)
+    old_data = to_remember(workbook)
 
+    df = pd.read_excel(staff, usecols=['ФИО',])
+    df.rename(columns={'ФИО': 'Сотрудник'}, inplace=True)
+    df = df.dropna()
 
-window = tk.Tk()
-window.title("Генератор Отчёта")
-window.geometry("500x450")
-window.resizable(False, False)
+    for i in range(len(df)):
+        df.loc[i]['Сотрудник'] = shorten_name(df.loc[i]['Сотрудник'])
+        if df.loc[i]['Сотрудник'] not in workbook.sheetnames:
+            create_employee_sheet(workbook, df.loc[i])
 
-label = tk.Label(window, text='Для работы программы нужены два файла. Один с расширением .csv (В названии файла необходимо указать дату в формате DD.MM.YYYY). Другой с расширением .xlsx(Здесь будут создаваться таблицы)', font=("Arial", 14), wraplength=450)
-label.pack(pady=10)
+    create_summary_sheet_header(workbook)
+    re_index(workbook)
+    sort_pages(workbook)
+    fill_summary_table(workbook, old_data)
 
-frame = tk.Frame(window)
-frame.pack()
+    workbook.save(report)
+    print('Пре-Билд готов!')
 
-csv_file = ""
-csv_file_path = ""
-xlsx_file = ""
-xlsx_file_path = ""
-
-
-label_csv = tk.Label(frame, text="Файл не выбран", font=("Arial", 14))
-label_csv.pack(side=tk.TOP)
-button_csv = tk.Button(frame, text="Выбрать таблицу для обработки", command=select_csv, width=16, height=3, wraplength=120)
-button_csv.pack(side=tk.TOP, pady=10)
-
-separator = tkinter.ttk.Separator(frame, orient='horizontal')
-separator.pack(fill='x', pady=10)
-
-label_xlsx = tk.Label(frame, text="Файл не выбран", font=("Arial", 14))
-label_xlsx.pack(side=tk.TOP)
-button_xlsx = tk.Button(frame, text="Выбрать файл для выгрузки отчёта", command=select_xlsx, width=16, height=3, wraplength=120)
-button_xlsx.pack(side=tk.TOP, pady=10)
-
-run_button = tk.Button(window, text="Создать отчёт", state='disabled', font=("Arial", 14), command=lambda: create_report(xlsx_file_path, csv_file_path))
-run_button.pack(pady=20)
-
-window.mainloop()
