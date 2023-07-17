@@ -3,20 +3,20 @@
 import requests
 import pandas as pd
 from dotenv import dotenv_values
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 env_vars = dotenv_values('variables.env')
 tasks_webhook = str(env_vars['tasks_webhook'])
 employees_webhook = str(env_vars['employees_webhook'])
 
 
-def create_dataframe(date):
+def create_dataframe(date, employees):
     next_date = date + timedelta(days=1)
 
     task_url = f'https://{tasks_webhook}/task.elapseditem.getlist.json?order[ID]=ASC&filter[>CREATED_DATE]={date}&filter[<CREATED_DATE]={next_date}&select[]=*&PARAMS[NAV_PARAMS][nPageSize]=50&PARAMS[NAV_PARAMS][iNumPage]=1'
     tasks_response = requests.get(task_url)
     tasks_json = tasks_response.json()
-    df = pd.DataFrame(columns=['Ñîòðóäíèê', 'Âðåìÿ, ÷àñû'])
+    df = pd.DataFrame(columns=['Ð¡Ð¾Ñ‚Ñ€ÑƒÐ´Ð½Ð¸Ðº', 'Ð’Ñ€ÐµÐ¼Ñ, Ñ‡Ð°ÑÑ‹'])
 
     for task in tasks_json['result']:
         user_id = task['USER_ID']
@@ -29,10 +29,11 @@ def create_dataframe(date):
         for field in user_json['result']:
             user_first_name = field['NAME']
             user_last_name = field['LAST_NAME']
+        full_name = f'{user_first_name} {user_last_name}'
 
-        temp_df = pd.DataFrame({'Ñîòðóäíèê': [f'{user_first_name} {user_last_name}'],
-                                'Âðåìÿ, ÷àñû': [int(time_spent) / 3600]})
-
-        df = pd.concat([df, temp_df], ignore_index=True)
+        if full_name in employees:
+            temp_df = pd.DataFrame({'Ð¡Ð¾Ñ‚Ñ€ÑƒÐ´Ð½Ð¸Ðº': [f'{user_first_name} {user_last_name}'],
+                                    'Ð’Ñ€ÐµÐ¼Ñ, Ñ‡Ð°ÑÑ‹': [int(time_spent) / 3600]})
+            df = pd.concat([df, temp_df], ignore_index=True)
 
     return df
