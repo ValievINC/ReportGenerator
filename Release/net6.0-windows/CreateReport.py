@@ -5,6 +5,8 @@ from openpyxl import load_workbook
 from openpyxl.styles import Alignment, Border, Side, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
+from CreateDataframe import create_dataframe
+
 
 # Styles
 text_style = Alignment(horizontal='center', vertical='center', wrap_text=True)
@@ -26,164 +28,61 @@ border = Border(
 )
 
 
-def count_hours_per_day(csv):
-    table = pd.read_csv(csv, sep=';', usecols=['Сотрудник', 'Время, часы'])
-    table['Время, часы'] = table['Время, часы'].str.replace(',', '.').astype(float)
-    table = table.groupby('Сотрудник')['Время, часы'].sum().reset_index()
-    table = table.sort_values(by='Сотрудник', key=lambda x: x.str.split().str[-1])
-    result = table.reset_index(drop=True)
-    return result
+# Painting
+def create_employee_sheet(workbook, data):
+    sheet = workbook.create_sheet()
+    sheet.title = data['Сотрудник']
 
-
-def re_index(workbook):
-    sheets = workbook.worksheets
-    names = []
-    if len(sheets) > 1:
-        for sheet in sheets[1:]:
-            names.append(sheet['B4'].value)
-        names.sort(key=lambda name: name.split()[-1])
-        for sheet in sheets[1:]:
-            sheet['A4'].value = names.index(sheet.title) + 1
-
-
-def sort_pages(workbook):
-    sorted_sheets = sorted(workbook._sheets[1:], key=lambda sheet: sheet.title.split()[-1])
-    workbook._sheets[1:] = sorted_sheets
-
-
-def fill_employees_page(workbook, data, date):
-    letter = get_column_letter(date + 3)
-
-    for i in range(len(data)):
-        if data.iloc[i]['Сотрудник'] not in workbook.sheetnames:
-            create_employee_sheet(workbook, data.iloc[i])
-    
-    today_employees_list = data['Сотрудник'].tolist()
-    
-    for employee in workbook.sheetnames[1:]:
-        if employee.title() not in today_employees_list:
-            sheet = workbook[employee.title()]
-            sheet[f'{letter}4'].fill = red_fill
-        else:
-            sheet = workbook[employee.title()]
-            sheet[f'{letter}4'] = data.loc[data['Сотрудник'] == employee.title()]['Время, часы'].item()
-    # if data['Сотрудник'] not in workbook.sheetnames:
-    #     create_employee_sheet(workbook, data)
-    #     sheet = workbook[f'{data["Сотрудник"]}']
-    #     sheet[f'{letter}4'] = data['Время, часы']
-    # else:
-    #     sheet = workbook[f'{data["Сотрудник"]}']
-    #     sheet[f'{letter}4'] = data['Время, часы']
-
-
-
-def restore_old_data(name, sheet, index, old_data):
-    if len(old_data) > 0 and name in old_data.keys():
-        coordinates = old_data[name]['coordinates']
-        for coordinate in coordinates:
-            column = coordinate[:1]
-            row = int(coordinate[1:])
-            index_dif = index - int(old_data[name]['index'])
-            rows_move = 4 * index_dif
-            row += rows_move
-            new_coordinate = column + str(row)
-            sheet[new_coordinate] = old_data[name]['coordinates'][coordinate]
-
-
-def clear_summary_table(sheet):
-    max_row = sheet.max_row
-    if max_row > 14:
-        sheet.unmerge_cells(f'B{max_row - 4}:C{max_row - 4}')
-        sheet.unmerge_cells(f'F{max_row - 4}:H{max_row - 4}')
-        sheet.unmerge_cells(f'J{max_row - 4}:Q{max_row - 4}')
-        sheet.unmerge_cells(f'S{max_row - 4}:U{max_row - 4}')
-        sheet.unmerge_cells(f'F{max_row - 3}:H{max_row - 3}')
-        sheet.unmerge_cells(f'J{max_row - 3}:Q{max_row - 3}')
-        sheet.unmerge_cells(f'S{max_row - 1}:U{max_row - 1}')
-        sheet.delete_rows(14, max_row)
-
-
-def fill_summary_table(workbook, old_data):
-    sheet = workbook.worksheets[0]
-    clear_summary_table(sheet)
-
-    for employee_sheet in workbook.worksheets[1:]:
-        index = employee_sheet['A4'].value
-        name = employee_sheet['B4'].value
-        pos = 10 + (4 * index)
-
-        add_table(pos, sheet)
-
-        sheet[f'B{pos}'] = index
-        sheet[f'C{pos}'] = name
-
-        restore_old_data(name, sheet, index, old_data)
-
-        for i in range(1, 31):
-            letter_for_employee = get_column_letter(i+3)
-            time = employee_sheet[f'{letter_for_employee}4'].value
-            filled = employee_sheet[f'{letter_for_employee}4'].fill
-            if time is not None:
-                if i < 16:
-                    sheet[f'{get_column_letter(i+4)}{pos}'] = 'Я'
-                    sheet[f'{get_column_letter(i+4)}{pos + 1}'] = '' if time == 8 else time - 8
-                else:
-                    sheet[f'{get_column_letter(i-11)}{pos + 2}'] = 'Я'
-                    sheet[f'{get_column_letter(i-11)}{pos + 3}'] = '' if time == 8 else time - 8
-            elif filled is not None:
-                fill = PatternFill(fill_type=filled.fill_type, fgColor=filled.fgColor, bgColor=filled.bgColor)
-                if i < 16:
-                    sheet[f'{get_column_letter(i + 4)}{pos}'].fill = fill
-                    sheet[f'{get_column_letter(i + 4)}{pos + 1}'].fill = fill
-                else:
-                    sheet[f'{get_column_letter(i - 11)}{pos + 2}'].fill = fill
-                    sheet[f'{get_column_letter(i - 11)}{pos + 3}'].fill = fill
-
-    max_row = sheet.max_row
-    create_summary_sheet_footer(sheet, max_row)
-
-
-def to_remember(workbook):
-    sheet = workbook.worksheets[0]
-    employees = len(workbook.worksheets) - 1
-    data = {}
-    if employees > 0:
-        for employee_sheet in workbook.worksheets[1:]:
-            index = employee_sheet['A4'].value
-            name = employee_sheet['B4'].value
-            pos = 10 + (4 * index)
-            cell_range = sheet[f'E{pos}:T{pos + 3}']
-            employee_data = {'index': index,
-                             'coordinates' : {}}
-            for row in cell_range:
-                for cell in row:
-                    value = cell.value
-                    if value is not None:
-                        employee_data['coordinates'][cell.coordinate] = value
-            data[name] = employee_data
-    return data
-
-
-def add_table(pos, sheet):
+    # Columns Width
+    sheet.column_dimensions['A'].width = 8
+    sheet.column_dimensions['B'].width = 16
+    sheet.column_dimensions['C'].width = 32
+    for column_index in range(4, 35):
+        column_letter = get_column_letter(column_index)
+        column_dimensions = sheet.column_dimensions[column_letter]
+        column_dimensions.width = 3
 
     # Rows Height
-    for i in range(pos, pos+4):
-        sheet.row_dimensions[i].height = 10
+    sheet.row_dimensions[1].height = 28
+    sheet.row_dimensions[2].height = 28
+    sheet.row_dimensions[3].height = 10
+    sheet.row_dimensions[4].height = 44
 
-    # Style
-    cell_range = sheet[f'B{pos}:V{pos + 3}']
+    cell_range = sheet['A1:AH4']
     for row in cell_range:
         for cell in row:
             cell.alignment = text_style
             cell.font = font1
             cell.border = border
 
+    cell_range = sheet['A4:C4']
+    for row in cell_range:
+        for cell in row:
+            cell.font = font2
+
+    # Data
+    sheet['A1'] = 'Номер\n по\n порядку'
+    sheet['B1'] = 'Фамилия, инициалы,\n должность\n (специальность,\n профессия)'
+    sheet['C1'] = 'Табельный\n номер'
+    sheet['D1'] = 'Отметки о явках и неявках на работу по числам месяца'
+    sheet['A3'] = 1
+    sheet['B3'] = 2
+    sheet['C3'] = 3
+    sheet['D3'] = 4
+    sheet['A4'] = data.name + 1
+    sheet['B4'] = data['Сотрудник']
+
+    for column_index in range(4, 35):
+        column_letter = get_column_letter(column_index)
+        cell = sheet[f'{column_letter}{2}']
+        cell.value = int(column_index - 3)
+
     # Merging
-    sheet.merge_cells(f'B{pos}:B{pos + 3}')
-    sheet.merge_cells(f'C{pos}:C{pos + 3}')
-    sheet.merge_cells(f'D{pos}:D{pos + 3}')
-    sheet.merge_cells(f'V{pos}:V{pos + 1}')
-    sheet.merge_cells(f'V{pos+2}:V{pos + 3}')
+    sheet.merge_cells('A1:A2')
+    sheet.merge_cells('B1:B2')
+    sheet.merge_cells('C1:C2')
+    sheet.merge_cells('D1:AH1')
+    sheet.merge_cells('D3:AH3')
 
 
 def create_summary_sheet_header(workbook):
@@ -334,74 +233,150 @@ def create_summary_sheet_footer(sheet, max_index):
     sheet.merge_cells(f'S{current_row + 3}:U{current_row + 3}')
 
 
-def create_employee_sheet(workbook, data):
-    sheet = workbook.create_sheet()
-    sheet.title = data['Сотрудник']
-
-    # Columns Width
-    sheet.column_dimensions['A'].width = 8
-    sheet.column_dimensions['B'].width = 16
-    sheet.column_dimensions['C'].width = 32
-    for column_index in range(4, 35):
-        column_letter = get_column_letter(column_index)
-        column_dimensions = sheet.column_dimensions[column_letter]
-        column_dimensions.width = 3
+def add_table(pos, sheet):
 
     # Rows Height
-    sheet.row_dimensions[1].height = 28
-    sheet.row_dimensions[2].height = 28
-    sheet.row_dimensions[3].height = 10
-    sheet.row_dimensions[4].height = 44
+    for i in range(pos, pos+4):
+        sheet.row_dimensions[i].height = 10
 
-    cell_range = sheet['A1:AH4']
+    # Style
+    cell_range = sheet[f'B{pos}:V{pos + 3}']
     for row in cell_range:
         for cell in row:
             cell.alignment = text_style
             cell.font = font1
             cell.border = border
 
-    cell_range = sheet['A4:C4']
-    for row in cell_range:
-        for cell in row:
-            cell.font = font2
-
-    # Data
-    sheet['A1'] = 'Номер\n по\n порядку'
-    sheet['B1'] = 'Фамилия, инициалы,\n должность\n (специальность,\n профессия)'
-    sheet['C1'] = 'Табельный\n номер'
-    sheet['D1'] = 'Отметки о явках и неявках на работу по числам месяца'
-    sheet['A3'] = 1
-    sheet['B3'] = 2
-    sheet['C3'] = 3
-    sheet['D3'] = 4
-    sheet['A4'] = data.name + 1
-    sheet['B4'] = data['Сотрудник']
-
-    for column_index in range(4, 35):
-        column_letter = get_column_letter(column_index)
-        cell = sheet[f'{column_letter}{2}']
-        cell.value = int(column_index - 3)
-
     # Merging
-    sheet.merge_cells('A1:A2')
-    sheet.merge_cells('B1:B2')
-    sheet.merge_cells('C1:C2')
-    sheet.merge_cells('D1:AH1')
-    sheet.merge_cells('D3:AH3')
+    sheet.merge_cells(f'B{pos}:B{pos + 3}')
+    sheet.merge_cells(f'C{pos}:C{pos + 3}')
+    sheet.merge_cells(f'D{pos}:D{pos + 3}')
+    sheet.merge_cells(f'V{pos}:V{pos + 1}')
+    sheet.merge_cells(f'V{pos+2}:V{pos + 3}')
 
 
-def ignore_employees():
-    pass
+def clear_summary_table(sheet):
+    max_row = sheet.max_row
+    if max_row > 14:
+        sheet.unmerge_cells(f'B{max_row - 4}:C{max_row - 4}')
+        sheet.unmerge_cells(f'F{max_row - 4}:H{max_row - 4}')
+        sheet.unmerge_cells(f'J{max_row - 4}:Q{max_row - 4}')
+        sheet.unmerge_cells(f'S{max_row - 4}:U{max_row - 4}')
+        sheet.unmerge_cells(f'F{max_row - 3}:H{max_row - 3}')
+        sheet.unmerge_cells(f'J{max_row - 3}:Q{max_row - 3}')
+        sheet.unmerge_cells(f'S{max_row - 1}:U{max_row - 1}')
+        sheet.delete_rows(14, max_row)
 
 
-def create_report(excel_file, data):
+# Filling
+def fill_employees_page(workbook, data, date):
+    letter = get_column_letter(date + 3)
+
+    for i in range(len(data)):
+        if data.iloc[i]['Сотрудник'] not in workbook.sheetnames:
+            create_employee_sheet(workbook, data.iloc[i])
+
+    today_employees_list = data['Сотрудник'].tolist()
+
+    for employee in workbook.sheetnames[1:]:
+        if employee.title() not in today_employees_list:
+            sheet = workbook[employee.title()]
+            sheet[f'{letter}4'].fill = red_fill
+        else:
+            sheet = workbook[employee.title()]
+            sheet[f'{letter}4'] = data.loc[data['Сотрудник'] == employee.title()]['Время, часы'].item()
+
+
+def fill_summary_table(workbook, old_data):
+    sheet = workbook.worksheets[0]
+    clear_summary_table(sheet)
+
+    for employee_sheet in workbook.worksheets[1:]:
+        index = employee_sheet['A4'].value
+        name = employee_sheet['B4'].value
+        pos = 10 + (4 * index)
+
+        add_table(pos, sheet)
+
+        sheet[f'B{pos}'] = index
+        sheet[f'C{pos}'] = name
+
+        restore_old_data(name, sheet, index, old_data)
+
+        for i in range(1, 31):
+            letter_for_employee = get_column_letter(i+3)
+            time = employee_sheet[f'{letter_for_employee}4'].value
+            filled = employee_sheet[f'{letter_for_employee}4'].fill
+            if time is not None and type(time) is not str:
+                if i < 16:
+                    sheet[f'{get_column_letter(i+4)}{pos}'] = 'Я'
+                    sheet[f'{get_column_letter(i+4)}{pos + 1}'] = '' if time == 8 else time - 8
+                else:
+                    sheet[f'{get_column_letter(i-11)}{pos + 2}'] = 'Я'
+                    sheet[f'{get_column_letter(i-11)}{pos + 3}'] = '' if time == 8 else time - 8
+            elif filled is not None:
+                fill = PatternFill(fill_type=filled.fill_type, fgColor=filled.fgColor, bgColor=filled.bgColor)
+                if i < 16:
+                    sheet[f'{get_column_letter(i + 4)}{pos}'] = time
+                    sheet[f'{get_column_letter(i + 4)}{pos}'].fill = fill
+                    sheet[f'{get_column_letter(i + 4)}{pos + 1}'].fill = fill
+                else:
+                    sheet[f'{get_column_letter(i - 11)}{pos + 2}'] = time
+                    sheet[f'{get_column_letter(i - 11)}{pos + 2}'].fill = fill
+                    sheet[f'{get_column_letter(i - 11)}{pos + 3}'].fill = fill
+
+    max_row = sheet.max_row
+    create_summary_sheet_footer(sheet, max_row)
+
+
+# To Remember and to Restore cells
+def to_remember(workbook):
+    sheet = workbook.worksheets[0]
+    employees = len(workbook.worksheets) - 1
+    data = {}
+    if employees > 0:
+        for employee_sheet in workbook.worksheets[1:]:
+            index = employee_sheet['A4'].value
+            name = employee_sheet['B4'].value
+            pos = 10 + (4 * index)
+            cell_range = sheet[f'E{pos}:T{pos + 3}']
+            employee_data = {'index': index,
+                             'coordinates' : {},
+                             'design': {}}
+            for row in cell_range:
+                for cell in row:
+                    value = cell.value
+                    if value is not None:
+                        employee_data['coordinates'][cell.coordinate] = value
+                        employee_data['design'][cell.coordinate] = cell.fill
+            data[name] = employee_data
+    return data
+
+
+def restore_old_data(name, sheet, index, old_data):
+    if len(old_data) > 0 and name in old_data.keys():
+        coordinates = old_data[name]['coordinates']
+        for coordinate in coordinates:
+            column = coordinate[:1]
+            row = int(coordinate[1:])
+            index_dif = index - int(old_data[name]['index'])
+            rows_move = 4 * index_dif
+            row += rows_move
+            new_coordinate = column + str(row)
+            sheet[new_coordinate] = old_data[name]['coordinates'][coordinate]
+
+            filled = old_data[name]['design'][coordinate]
+            fill = PatternFill(fill_type=filled.fill_type, fgColor=filled.fgColor, bgColor=filled.bgColor)
+            sheet[new_coordinate].fill = fill
+
+
+# Building Reports
+def create_report(excel_file, selected_date):
     workbook = load_workbook(excel_file)
-
-    csv_file_name = data.split("/")[-1]
-    day = int(csv_file_name[:2])
+    data = create_dataframe(selected_date)
+    day = int(str(selected_date)[-2:])
     df = count_hours_per_day(data)
     old_data = to_remember(workbook)
-
     fill_employees_page(workbook, df, day)
 
     create_summary_sheet_header(workbook)
@@ -411,12 +386,6 @@ def create_report(excel_file, data):
 
     workbook.save(excel_file)
     print('Готово!')
-
-
-def shorten_name(full_name):
-    split_names = full_name.split()
-    shortened_name = split_names[1] + ' ' + split_names[0]
-    return shortened_name
 
 
 def prebuild(report, staff):
@@ -439,4 +408,39 @@ def prebuild(report, staff):
 
     workbook.save(report)
     print('Пре-Билд готов!')
+
+
+# Other
+def count_hours_per_day(data):
+    table = data.groupby('Сотрудник')['Время, часы'].sum().reset_index()
+    table = table.sort_values(by='Сотрудник', key=lambda x: x.str.split().str[-1])
+    result = table.reset_index(drop=True)
+    return result
+
+
+def re_index(workbook):
+    sheets = workbook.worksheets
+    names = []
+    if len(sheets) > 1:
+        for sheet in sheets[1:]:
+            names.append(sheet['B4'].value)
+        names.sort(key=lambda name: name.split()[-1])
+        for sheet in sheets[1:]:
+            sheet['A4'].value = names.index(sheet.title) + 1
+
+
+def sort_pages(workbook):
+    sorted_sheets = sorted(workbook._sheets[1:], key=lambda sheet: sheet.title.split()[-1])
+    workbook._sheets[1:] = sorted_sheets
+
+
+def ignore_employees():
+    pass
+
+
+def shorten_name(full_name):
+    split_names = full_name.split()
+    shortened_name = split_names[1] + ' ' + split_names[0]
+    return shortened_name
+
 
