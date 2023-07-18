@@ -31,7 +31,7 @@ border = Border(
 # Painting
 def create_employee_sheet(workbook, data):
     sheet = workbook.create_sheet()
-    sheet.title = data['РЎРѕС‚СЂСѓРґРЅРёРє']
+    sheet.title = data['Сотрудник']
 
     # Columns Width
     sheet.column_dimensions['A'].width = 8
@@ -61,16 +61,16 @@ def create_employee_sheet(workbook, data):
             cell.font = font2
 
     # Data
-    sheet['A1'] = 'РќРѕРјРµСЂ\n РїРѕ\n РїРѕСЂСЏРґРєСѓ'
-    sheet['B1'] = 'Р¤Р°РјРёР»РёСЏ, РёРЅРёС†РёР°Р»С‹,\n РґРѕР»Р¶РЅРѕСЃС‚СЊ\n (СЃРїРµС†РёР°Р»СЊРЅРѕСЃС‚СЊ,\n РїСЂРѕС„РµСЃСЃРёСЏ)'
-    sheet['C1'] = 'РўР°Р±РµР»СЊРЅС‹Р№\n РЅРѕРјРµСЂ'
-    sheet['D1'] = 'РћС‚РјРµС‚РєРё Рѕ СЏРІРєР°С… Рё РЅРµСЏРІРєР°С… РЅР° СЂР°Р±РѕС‚Сѓ РїРѕ С‡РёСЃР»Р°Рј РјРµСЃСЏС†Р°'
+    sheet['A1'] = 'Номер\n по\n порядку'
+    sheet['B1'] = 'Фамилия, инициалы,\n должность\n (специальность,\n профессия)'
+    sheet['C1'] = 'Табельный\n номер'
+    sheet['D1'] = 'Отметки о явках и неявках на работу по числам месяца'
     sheet['A3'] = 1
     sheet['B3'] = 2
     sheet['C3'] = 3
     sheet['D3'] = 4
     sheet['A4'] = data.name + 1
-    sheet['B4'] = data['РЎРѕС‚СЂСѓРґРЅРёРє']
+    sheet['B4'] = data['Сотрудник']
 
     for column_index in range(4, 35):
         column_letter = get_column_letter(column_index)
@@ -87,7 +87,7 @@ def create_employee_sheet(workbook, data):
 
 def create_summary_sheet_header(workbook):
     sheet = workbook.worksheets[0]
-    sheet.title = "РЎРІРѕРґРЅС‹Р№ Р»РёСЃС‚"
+    sheet.title = "Сводный лист"
 
     # Columns Width
     sheet.column_dimensions['A'].width = 6
@@ -133,16 +133,16 @@ def create_summary_sheet_header(workbook):
             cell.border = border
 
     # Data
-    sheet['B1'] = 'РћР±С‰РµСЃС‚РІРѕ СЃ РѕРіСЂР°РЅРёС‡РµРЅРЅРѕР№ РѕС‚РІРµС‚СЃС‚РІРµРЅРЅРѕСЃС‚СЊСЋ "РђРЎРџ-РђРљР’Рђ"'
-    sheet['B2'] = 'РЅР°РёРјРµРЅРѕРІР°РЅРёРµ РѕСЂРіР°РЅРёР·Р°С†РёРё'
-    sheet['B3'] = 'РќР°Р·РІР°РЅРёРµ РѕС‚РґРµР»Р° РћС‚РґРµР» С‚СЂРµС…РјРµСЂРЅРѕРіРѕ РїСЂРѕРµРєС‚РёСЂРѕРІР°РЅРёСЏ'
-    sheet['B4'] = 'СЃС‚СЂСѓРєС‚СѓСЂРЅРѕРµ РїРѕР·РґСЂР°Р·РґРµР»РµРЅРёРµ'
-    sheet['B7'] = 'РўРђР‘Р•Р›Р¬'
-    sheet['B8'] = 'РќРѕРјРµСЂ\n РїРѕ\nРїРѕСЂСЏРґ-\nРєСѓ'
-    sheet['C8'] = 'Р¤Р°РјРёР»РёСЏ, РёРЅРёС†РёР°Р»С‹,\n РґРѕР»Р¶РЅРѕСЃС‚СЊ\n (СЃРїРµС†РёР°Р»СЊРЅРѕСЃС‚СЊ,\n РїСЂРѕС„РµСЃСЃРёСЏ)'
-    sheet['D8'] = 'РўР°Р±РµР»СЊРЅС‹Р№\n РЅРѕРјРµСЂ'
-    sheet['E8'] = 'РћС‚РјРµС‚РєРё Рѕ СЏРІРєР°С… Рё РЅРµСЏРІРєР°С… РЅР° СЂР°Р±РѕС‚Сѓ РїРѕ С‡РёСЃР»Р°Рј РјРµСЃСЏС†Р°'
-    sheet['U8'] = 'РћС‚СЂР°Р±РѕС‚Р°РЅРѕ Р·Р°'
+    sheet['B1'] = 'Общество с ограниченной ответственностью "АСП-АКВА"'
+    sheet['B2'] = 'наименование организации'
+    sheet['B3'] = 'Название отдела Отдел трехмерного проектирования'
+    sheet['B4'] = 'структурное поздразделение'
+    sheet['B7'] = 'ТАБЕЛЬ'
+    sheet['B8'] = 'Номер\n по\nпоряд-\nку'
+    sheet['C8'] = 'Фамилия, инициалы,\n должность\n (специальность,\n профессия)'
+    sheet['D8'] = 'Табельный\n номер'
+    sheet['E8'] = 'Отметки о явках и неявках на работу по числам месяца'
+    sheet['U8'] = 'Отработано за'
 
     for i in range(5, 20):
         ltr = get_column_letter(i)
@@ -150,10 +150,10 @@ def create_summary_sheet_header(workbook):
         sheet[f'{ltr}11'] = i + 11
 
     sheet['T9'] = sheet['T11'] = 'X'
-    sheet['U9'] = 'РїРѕР»РѕРІРёРЅСѓ\n РјРµСЃСЏС†Р°\n (I, II)'
-    sheet['V9'] = 'РјРµСЃСЏС†'
-    sheet['U11'] = 'РґРЅРё'
-    sheet['U12'] = 'С‡Р°СЃС‹'
+    sheet['U9'] = 'половину\n месяца\n (I, II)'
+    sheet['V9'] = 'месяц'
+    sheet['U11'] = 'дни'
+    sheet['U12'] = 'часы'
     sheet['B13'] = 1
     sheet['C13'] = 2
     sheet['D13'] = 3
@@ -214,14 +214,14 @@ def create_summary_sheet_footer(sheet, max_index):
     sheet[f'V{current_row + 4}'].alignment = text_style_manuscript
 
     # Data
-    sheet[f'B{current_row}'] = 'РћС‚РІРµС‚СЃС‚РІРµРЅРЅРѕРµ\nР»РёС†Рѕ'
-    sheet[f'S{current_row}'] = 'Р СѓРєРѕРІРѕРґРёС‚РµР»СЊ\nСЃС‚СЂСѓРєС‚СѓСЂРЅРѕРіРѕ\nРїРѕРґСЂР°Р·РґРµР»РµРЅРёСЏ'
-    sheet[f'D{current_row + 1}'] = 'РґРѕР»Р¶РЅРѕСЃС‚СЊ'
-    sheet[f'F{current_row + 1}'] = 'Р»РёС‡РЅР°СЏ РїРѕРґРїРёСЃСЊ'
-    sheet[f'J{current_row + 1}'] = 'СЂР°СЃС€РёС„СЂРѕРІРєР° РїРѕРґРїРёСЃРё'
-    sheet[f'V{current_row + 1}'] = 'РґРѕР»Р¶РЅРѕСЃС‚СЊ'
-    sheet[f'S{current_row + 3}'] = 'Р Р°Р±РѕС‚РЅРёРє РєР°РґСЂРѕРІРѕР№\nСЃР»СѓР¶Р±С‹'
-    sheet[f'V{current_row + 4}'] = 'РґРѕР»Р¶РЅРѕСЃС‚СЊ'
+    sheet[f'B{current_row}'] = 'Ответственное\nлицо'
+    sheet[f'S{current_row}'] = 'Руководитель\nструктурного\nподразделения'
+    sheet[f'D{current_row + 1}'] = 'должность'
+    sheet[f'F{current_row + 1}'] = 'личная подпись'
+    sheet[f'J{current_row + 1}'] = 'расшифровка подписи'
+    sheet[f'V{current_row + 1}'] = 'должность'
+    sheet[f'S{current_row + 3}'] = 'Работник кадровой\nслужбы'
+    sheet[f'V{current_row + 4}'] = 'должность'
 
     # Merging
     sheet.merge_cells(f'B{current_row}:C{current_row}')
@@ -273,10 +273,10 @@ def fill_employees_page(workbook, data, date):
     letter = get_column_letter(date + 3)
 
     for i in range(len(data)):
-        if data.iloc[i]['РЎРѕС‚СЂСѓРґРЅРёРє'] not in workbook.sheetnames:
+        if data.iloc[i]['Сотрудник'] not in workbook.sheetnames:
             create_employee_sheet(workbook, data.iloc[i])
 
-    today_employees_list = data['РЎРѕС‚СЂСѓРґРЅРёРє'].tolist()
+    today_employees_list = data['Сотрудник'].tolist()
 
     for employee in workbook.sheetnames[1:]:
         if employee.title() not in today_employees_list:
@@ -284,7 +284,7 @@ def fill_employees_page(workbook, data, date):
             sheet[f'{letter}4'].fill = red_fill
         else:
             sheet = workbook[employee.title()]
-            sheet[f'{letter}4'] = data.loc[data['РЎРѕС‚СЂСѓРґРЅРёРє'] == employee.title()]['Р’СЂРµРјСЏ, С‡Р°СЃС‹'].item()
+            sheet[f'{letter}4'] = data.loc[data['Сотрудник'] == employee.title()]['Время, часы'].item()
 
 
 def fill_summary_table(workbook, old_data):
@@ -309,10 +309,10 @@ def fill_summary_table(workbook, old_data):
             filled = employee_sheet[f'{letter_for_employee}4'].fill
             if time is not None and type(time) is not str:
                 if i < 16:
-                    sheet[f'{get_column_letter(i+4)}{pos}'] = 'РЇ'
+                    sheet[f'{get_column_letter(i+4)}{pos}'] = 'Я'
                     sheet[f'{get_column_letter(i+4)}{pos + 1}'] = '' if time == 8 else time - 8
                 else:
-                    sheet[f'{get_column_letter(i-11)}{pos + 2}'] = 'РЇ'
+                    sheet[f'{get_column_letter(i-11)}{pos + 2}'] = 'Я'
                     sheet[f'{get_column_letter(i-11)}{pos + 3}'] = '' if time == 8 else time - 8
             elif filled is not None:
                 fill = PatternFill(fill_type=filled.fill_type, fgColor=filled.fgColor, bgColor=filled.bgColor)
@@ -389,31 +389,34 @@ def create_report(excel_file, selected_date):
     fill_summary_table(workbook, old_data)
 
     workbook.save(excel_file)
-    print('Р“РѕС‚РѕРІРѕ!')
+    print('Готово!')
 
 
 def prebuild(report, staff):
     workbook = load_workbook(report)
     old_data = to_remember(workbook)
 
-    df = pd.read_excel(staff, usecols=['Р¤РРћ',])
-    df.rename(columns={'Р¤РРћ': 'РЎРѕС‚СЂСѓРґРЅРёРє'}, inplace=True)
+    df = pd.read_excel(staff, usecols=['ФИО',])
+    df.rename(columns={'ФИО': 'Сотрудник'}, inplace=True)
     df = df.dropna()
 
     for i in range(len(df)):
-        df.loc[i]['РЎРѕС‚СЂСѓРґРЅРёРє'] = shorten_name(df.loc[i]['РЎРѕС‚СЂСѓРґРЅРёРє'])
-        if df.loc[i]['РЎРѕС‚СЂСѓРґРЅРёРє'] not in workbook.sheetnames:
+        df.loc[i]['Сотрудник'] = shorten_name(df.loc[i]['Сотрудник'])
+        if df.loc[i]['Сотрудник'] not in workbook.sheetnames:
             create_employee_sheet(workbook, df.loc[i])
 
     for employee_sheet in workbook.sheetnames[1:]:
-        if employee_sheet.title() not in list(df['РЎРѕС‚СЂСѓРґРЅРёРє']):
+        if employee_sheet.title() not in list(df['Сотрудник']):
             std = workbook.get_sheet_by_name(employee_sheet.title())
             workbook.remove_sheet(std)
 
-    if 'РЎРІРѕРґРЅС‹Р№ Р»РёСЃС‚' in workbook.sheetnames:
-        del workbook['РЎРІРѕРґРЅС‹Р№ Р»РёСЃС‚']
+    if 'Сводный лист' in workbook.sheetnames:
+        del workbook['Сводный лист']
 
-    workbook.create_sheet('РЎРІРѕРґРЅС‹Р№ Р»РёСЃС‚', 0)
+    workbook.create_sheet('Сводный лист', 0)
+
+    if 'Лист1' in workbook.sheetnames:
+        del workbook['Сводный лист']
 
     create_summary_sheet_header(workbook)
     re_index(workbook)
@@ -421,13 +424,20 @@ def prebuild(report, staff):
     fill_summary_table(workbook, old_data)
 
     workbook.save(report)
-    print('РџСЂРµ-Р‘РёР»Рґ РіРѕС‚РѕРІ!')
+    print('Пре-Билд готов!')
+
+
+def reload_report(excel_file):
+    workbook = load_workbook(excel_file)
+    old_data = to_remember(workbook)
+    fill_summary_table(workbook, old_data)
+    workbook.save(excel_file)
 
 
 # Other
 def count_hours_per_day(data):
-    table = data.groupby('РЎРѕС‚СЂСѓРґРЅРёРє')['Р’СЂРµРјСЏ, С‡Р°СЃС‹'].sum().reset_index()
-    table = table.sort_values(by='РЎРѕС‚СЂСѓРґРЅРёРє', key=lambda x: x.str.split().str[-1])
+    table = data.groupby('Сотрудник')['Время, часы'].sum().reset_index()
+    table = table.sort_values(by='Сотрудник', key=lambda x: x.str.split().str[-1])
     result = table.reset_index(drop=True)
     return result
 
@@ -446,10 +456,6 @@ def re_index(workbook):
 def sort_pages(workbook):
     sorted_sheets = sorted(workbook._sheets[1:], key=lambda sheet: sheet.title.split()[-1])
     workbook._sheets[1:] = sorted_sheets
-
-
-def ignore_employees():
-    pass
 
 
 def shorten_name(full_name):
