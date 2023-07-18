@@ -22,7 +22,7 @@ def count_pages(date, next_date):
 def create_dataframe(date, employees):
     next_date = date + timedelta(days=1)
     pages = count_pages(date, next_date)
-    df = pd.DataFrame(columns=['Ñîòðóäíèê', 'Âðåìÿ, ÷àñû'])
+    df = pd.DataFrame(columns=['Ð¡Ð¾Ñ‚Ñ€ÑƒÐ´Ð½Ð¸Ðº', 'Ð’Ñ€ÐµÐ¼Ñ, Ñ‡Ð°ÑÑ‹'])
 
     for num_page in range(1, pages + 1):
         task_url = f'https://{tasks_webhook}/task.elapseditem.getlist.json?order[ID]=ASC&filter[>CREATED_DATE]={date}&filter[<CREATED_DATE]={next_date}&select[]=*&PARAMS[NAV_PARAMS][nPageSize]=50&PARAMS[NAV_PARAMS][iNumPage]={num_page}'
@@ -48,8 +48,8 @@ def create_dataframe(date, employees):
             full_name = f'{user_first_name} {user_last_name}'
 
             if full_name in employees:
-                temp_df = pd.DataFrame({'Ñîòðóäíèê': [f'{user_first_name} {user_last_name}'],
-                                        'Âðåìÿ, ÷àñû': [int(time_spent) / 3600]})
+                temp_df = pd.DataFrame({'Ð¡Ð¾Ñ‚Ñ€ÑƒÐ´Ð½Ð¸Ðº': [f'{user_first_name} {user_last_name}'],
+                                        'Ð’Ñ€ÐµÐ¼Ñ, Ñ‡Ð°ÑÑ‹': [int(time_spent) / 3600]})
                 df = pd.concat([df, temp_df], ignore_index=True)
 
     return df
