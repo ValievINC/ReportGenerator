@@ -3,12 +3,20 @@
 import requests
 import pandas as pd
 from dotenv import dotenv_values
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 env_vars = dotenv_values('variables.env')
 tasks_webhook = str(env_vars['tasks_webhook'])
 employees_webhook = str(env_vars['employees_webhook'])
 task_description_webhook = str(env_vars['task_description_webhook'])
+
+
+def get_date_statistic(date):
+    formatted_date = date.strftime("%d.%m.%Y")
+    url = f'https://production-calendar.ru/get/ru/{formatted_date}/json?region=16'
+    request = requests.get(url)
+    request_json = request.json()
+    return {'holiday': request_json["statistic"]['holidays'], 'working_hours': request_json["statistic"]['working_hours'], 'weekend': request_json["statistic"]['weekends']}
 
 
 def count_pages(date, next_date):
@@ -22,7 +30,7 @@ def count_pages(date, next_date):
 def create_dataframe(date, employees):
     next_date = date + timedelta(days=1)
     pages = count_pages(date, next_date)
-    df = pd.DataFrame(columns=['Ð¡Ð¾Ñ‚Ñ€ÑƒÐ´Ð½Ð¸Ðº', 'Ð’Ñ€ÐµÐ¼Ñ, Ñ‡Ð°ÑÑ‹'])
+    df = pd.DataFrame(columns=['Ñîòðóäíèê', 'Âðåìÿ, ÷àñû'])
 
     for num_page in range(1, pages + 1):
         task_url = f'https://{tasks_webhook}/task.elapseditem.getlist.json?order[ID]=ASC&filter[>CREATED_DATE]={date}&filter[<CREATED_DATE]={next_date}&select[]=*&PARAMS[NAV_PARAMS][nPageSize]=50&PARAMS[NAV_PARAMS][iNumPage]={num_page}'
@@ -48,8 +56,8 @@ def create_dataframe(date, employees):
             full_name = f'{user_first_name} {user_last_name}'
 
             if full_name in employees:
-                temp_df = pd.DataFrame({'Ð¡Ð¾Ñ‚Ñ€ÑƒÐ´Ð½Ð¸Ðº': [f'{user_first_name} {user_last_name}'],
-                                        'Ð’Ñ€ÐµÐ¼Ñ, Ñ‡Ð°ÑÑ‹': [int(time_spent) / 3600]})
+                temp_df = pd.DataFrame({'Ñîòðóäíèê': [f'{user_first_name} {user_last_name}'],
+                                        'Âðåìÿ, ÷àñû': [int(time_spent) / 3600]})
                 df = pd.concat([df, temp_df], ignore_index=True)
 
     return df

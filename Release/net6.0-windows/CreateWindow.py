@@ -26,7 +26,7 @@ def select_report_xlsx():
         report_xlsx_file = report_xlsx_file_path.split("/")[-1]
     if check_employees_nonexistence(report_xlsx_file_path):
         staff_exists = False
-        label_report_xlsx.config(text="РќСѓР¶РЅРѕ Р·Р°РіСЂСѓР·РёС‚СЊ СЃРѕС‚СЂСѓРґРЅРёРєРѕРІ РІ С‚Р°Р±Р»РёС†Сѓ СЃ РѕС‚С‡С‘С‚РѕРј.")
+        label_report_xlsx.config(text="Нужно загрузить сотрудников в таблицу с отчётом.")
         run_button.config(state='disabled')
     else:
         staff_exists = True
@@ -59,7 +59,7 @@ def on_date_selected(event):
     else:
         checkbox.config(state='disabled')
         run_button.config(state='disabled')
-        label_cal.config(text="Р’С‹Р±СЂР°РЅР° РЅРµРґРѕРїСѓСЃС‚РёРјР°СЏ РґР°С‚Р°.")
+        label_cal.config(text="Выбрана недопустимая дата.")
 
 
 def on_range_selected(event):
@@ -73,7 +73,7 @@ def on_range_selected(event):
             run_button.config(state='active')
     else:
         run_button.config(state='disabled')
-        label_cal.config(text="Р’С‹Р±СЂР°РЅР° РЅРµРґРѕРїСѓСЃС‚РёРјР°СЏ РґР°С‚Р°.")
+        label_cal.config(text="Выбрана недопустимая дата.")
 
 
 def run_report_creation():
@@ -81,6 +81,7 @@ def run_report_creation():
         run_button.config(state='disabled')
         t1 = threading.Thread(target=create_report(report_xlsx_file_path, selected_date))
         t1.start()
+        t1.join()
         run_button.config(state='active')
     else:
         current_date = selected_date
@@ -88,9 +89,10 @@ def run_report_creation():
             run_button.config(state='disabled')
             t1 = threading.Thread(target=create_report(report_xlsx_file_path, current_date))
             t1.start()
+            t1.join()
             run_button.config(state='active')
             current_date += timedelta(days=1)
-        print('Р¦РёРєР» Р·Р°РІРµСЂС€РµРЅ')
+        print('Цикл завершен')
 
 
 def toggle_calendar():
@@ -109,12 +111,12 @@ def toggle_calendar():
 
 
 window = tk.Tk()
-window.title("Р“РµРЅРµСЂР°С‚РѕСЂ РћС‚С‡С‘С‚Р°")
+window.title("Генератор Отчёта")
 window.geometry("500x850")
 window.resizable(False, False)
 
 label = tk.Label(window,
-                 text='Р”Р»СЏ СЂР°Р±РѕС‚С‹ РїСЂРѕРіСЂР°РјРјС‹ РЅСѓР¶РЅРѕ РІС‹Р±СЂР°С‚СЊ РґР°С‚Сѓ, РїРѕ РєРѕС‚РѕСЂРѕР№ РІС‹ С…РѕС‚РёС‚Рµ СЃРґРµР»Р°С‚СЊ РѕС‚С‡С‘С‚, Рё Excel-С„Р°Р№Р» СЃ СЂР°СЃС€РёСЂРµРЅРёРµРј .xlsx, РєСѓРґР° Р±СѓРґРµС‚ РІС‹РіСЂСѓР¶Р°С‚СЊСЃСЏ РѕС‚С‡С‘С‚. Р•СЃР»Рё Excel-С„Р°Р№Р» РїСѓСЃС‚РѕР№ РёР»Рё РІ РѕС‚РґРµР»Рµ РїРѕСЏРІРёР»РёСЃСЊ РЅРѕРІС‹Рµ СЃРѕС‚СЂСѓРґРЅРёРєРё, С‚Рѕ РЅРµРѕР±С…РѕРґРёРјРѕ РІРЅРµСЃС‚Рё Р±Р°Р·Сѓ СЃРѕС‚СЂСѓРґРЅРёРєРѕРІ (Excel-РґРѕРєСѓРјРµРЅС‚)',
+                 text='Для работы программы нужно выбрать дату, по которой вы хотите сделать отчёт, и Excel-файл с расширением .xlsx, куда будет выгружаться отчёт. Если Excel-файл пустой или в отделе появились новые сотрудники, то необходимо внести базу сотрудников (Excel-документ)',
                  font=("Arial", 14),
                  wraplength=450)
 label.pack(pady=10)
@@ -130,7 +132,7 @@ report_xlsx_file_path = ""
 
 # Calendar
 label_cal = tk.Label(cal_frame,
-                     text="Р’С‹Р±РµСЂРёС‚Рµ РґР°С‚Сѓ",
+                     text="Выберите дату",
                      font=("Arial", 14))
 label_cal.pack(side=tk.TOP)
 cal = Calendar(cal_frame,
@@ -144,7 +146,7 @@ cal.bind("<<CalendarSelected>>", on_date_selected)
 
 # Checkbox
 show_calendar = BooleanVar()
-checkbox = Checkbutton(cal_frame, state="disabled", text="Р’С‹Р±СЂР°С‚СЊ РєРѕРЅРµС‡РЅСѓСЋ РґР°С‚Сѓ", variable=show_calendar, command=toggle_calendar)
+checkbox = Checkbutton(cal_frame, state="disabled", text="Выбрать конечную дату", variable=show_calendar, command=toggle_calendar)
 checkbox.pack(side=tk.TOP,
               pady=20)
 range_cal = Calendar(cal_frame,
@@ -166,11 +168,11 @@ separator.pack(fill='x',
 
 # Excel Doc
 label_report_xlsx = tk.Label(buttons_frame,
-                             text="Р¤Р°Р№Р» РЅРµ РІС‹Р±СЂР°РЅ",
+                             text="Файл не выбран",
                              font=("Arial", 14))
 label_report_xlsx.pack(side=tk.TOP)
 button_report_xlsx = tk.Button(buttons_frame,
-                               text="Р’С‹Р±СЂР°С‚СЊ С„Р°Р№Р» РґР»СЏ РІС‹РіСЂСѓР·РєРё РѕС‚С‡С‘С‚Р°",
+                               text="Выбрать файл для выгрузки отчёта",
                                command=select_report_xlsx,
                                width=16,
                                height=3,
@@ -186,7 +188,7 @@ separator.pack(fill='x',
 
 # Staff Prebuild
 button_staff_xlsx = tk.Button(buttons_frame,
-                              text="Р’С‹Р±СЂР°С‚СЊ С„Р°Р№Р» РґР»СЏ Р·Р°РіСЂСѓР·РєРё СЃРѕС‚СЂСѓРґРЅРёРєРѕРІ",
+                              text="Выбрать файл для загрузки сотрудников",
                               state='disabled',
                               command=select_staff_xlsx,
                               width=16,
@@ -203,7 +205,7 @@ separator.pack(fill='x',
 
 # Reload button
 reload_button = tk.Button(window,
-                       text="РћР±РЅРѕРІРёС‚СЊ СЃРІРѕРґРЅС‹Р№ Р»РёСЃС‚",
+                       text="Обновить сводный лист",
                        state='disabled',
                        font=("Arial", 12),
                        command=lambda: reload_report(report_xlsx_file_path))
@@ -211,7 +213,7 @@ reload_button.pack(pady=10)
 
 # Run button
 run_button = tk.Button(window,
-                       text="РЎРѕР·РґР°С‚СЊ РѕС‚С‡С‘С‚",
+                       text="Создать отчёт",
                        state='disabled',
                        font=("Arial", 16),
                        command=run_report_creation)
