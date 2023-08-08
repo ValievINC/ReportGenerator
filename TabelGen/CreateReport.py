@@ -1,11 +1,11 @@
-# encoding: windows-1251
+import asyncio
 
 import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment, Border, Side, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
-from CreateDataframe import create_dataframe, get_date_statistic
+from CreateDataframe import create_dataframe, get_date_statistic, get_month_statistic
 
 
 # Styles
@@ -30,7 +30,7 @@ border = Border(
 
 
 # Painting
-def create_employee_sheet(workbook, data):
+def create_employee_sheet(workbook, data, month):
     sheet = workbook.create_sheet()
     sheet.title = data['Сотрудник']
 
@@ -87,7 +87,7 @@ def create_employee_sheet(workbook, data):
     sheet.merge_cells('D3:AH3')
 
 
-def create_summary_sheet_header(workbook):
+def create_summary_sheet_header(workbook, month):
     sheet = workbook.worksheets[0]
     sheet.title = "Сводный лист"
 
@@ -146,12 +146,20 @@ def create_summary_sheet_header(workbook):
     sheet['E8'] = 'Отметки о явках и неявках на работу по числам месяца'
     sheet['U8'] = 'Отработано за'
 
-    for i in range(5, 20):
+    for i in range(5, 21):
         ltr = get_column_letter(i)
-        sheet[f'{ltr}9'] = i - 4
-        sheet[f'{ltr}11'] = i + 11
+        sheet[f'{ltr}9'] = sheet[f'{ltr}11'] = 'X'
 
-    sheet['T9'] = sheet['T11'] = 'X'
+    for day in month.keys():
+        if day <= 15:
+            ltr = get_column_letter(day + 4)
+            sheet.unmerge_cells(f'{ltr}9:{ltr}10')
+            sheet[f'{ltr}9'] = day
+        elif day <= 31:
+            ltr = get_column_letter(day - 11)
+            sheet.unmerge_cells(f'{ltr}11:{ltr}12')
+            sheet[f'{ltr}11'] = day
+
     sheet['U9'] = 'половину\n месяца\n (I, II)'
     sheet['V9'] = 'месяц'
     sheet['U11'] = 'дни'
@@ -295,7 +303,7 @@ def fill_employees_page(workbook, data, date, date_stat):
             sheet[f'{letter}5'].font = Font(color='FFFFFFFF')
 
 
-def fill_summary_table(workbook, old_data):
+def fill_summary_table(workbook, old_data, month):
     sheet = workbook.worksheets[0]
     clear_summary_table(sheet)
 
@@ -311,7 +319,7 @@ def fill_summary_table(workbook, old_data):
 
         restore_old_data(name, sheet, index, old_data)
 
-        for i in range(1, 31):
+        for i in range(1, len(month) + 1):
             letter_for_employee = get_column_letter(i+3)
             time = employee_sheet[f'{letter_for_employee}4'].value
             filled = employee_sheet[f'{letter_for_employee}4'].fill
@@ -387,20 +395,21 @@ def create_report(excel_file, selected_date):
     for employee_page in workbook.worksheets[1:]:
         employees.append(employee_page.title)
 
-    date_stat = get_date_statistic(selected_date)
-    print(date_stat)
+    data = asyncio.run(create_dataframe(selected_date, employees))
+    print(data)
 
-    data = create_dataframe(selected_date, employees)
+    date_stat = get_date_statistic(selected_date)
+    month_stat = get_month_statistic(selected_date)
 
     day = int(str(selected_date)[-2:])
     df = count_hours_per_day(data)
     old_data = to_remember(workbook)
     fill_employees_page(workbook, df, day, date_stat)
 
-    create_summary_sheet_header(workbook)
+    create_summary_sheet_header(workbook, month_stat)
     re_index(workbook)
     sort_pages(workbook)
-    fill_summary_table(workbook, old_data)
+    fill_summary_table(workbook, old_data, month_stat)
 
     workbook.save(excel_file)
     print('Готово!')
@@ -417,7 +426,7 @@ def prebuild(report, staff):
     for i in range(len(df)):
         df.loc[i]['Сотрудник'] = shorten_name(df.loc[i]['Сотрудник'])
         if df.loc[i]['Сотрудник'] not in workbook.sheetnames:
-            create_employee_sheet(workbook, df.loc[i])
+            create_employee_sheet(workbook, df.loc[i], month={})
 
     for employee_sheet in workbook.sheetnames[1:]:
         if employee_sheet.title() not in list(df['Сотрудник']):
@@ -432,10 +441,10 @@ def prebuild(report, staff):
     if 'Лист1' in workbook.sheetnames:
         del workbook['Лист1']
 
-    create_summary_sheet_header(workbook)
+    create_summary_sheet_header(workbook, month={})
     re_index(workbook)
     sort_pages(workbook)
-    fill_summary_table(workbook, old_data)
+    fill_summary_table(workbook, old_data, month={})
 
     workbook.save(report)
     print('Пре-Билд готов!')

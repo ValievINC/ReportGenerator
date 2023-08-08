@@ -1,5 +1,3 @@
-# encoding: windows-1251
-
 import threading
 import tkinter as tk
 from tkinter import filedialog, Checkbutton, BooleanVar
